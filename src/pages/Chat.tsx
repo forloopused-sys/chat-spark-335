@@ -20,6 +20,8 @@ interface Message {
   text: string;
   timestamp: number;
   status: 'sent' | 'seen';
+  deleted?: boolean;
+  edited?: boolean;
 }
 
 const Chat = () => {
@@ -144,7 +146,13 @@ const Chat = () => {
     const chatId = [user.uid, userId].sort().join('_');
     const messageRef = ref(database, `messages/${chatId}/${messageId}`);
     
-    await remove(messageRef);
+    await set(messageRef, {
+      senderId: user.uid,
+      text: 'This message deleted',
+      timestamp: Date.now(),
+      status: 'sent',
+      deleted: true,
+    });
     
     toast({
       title: 'Message Deleted',
@@ -194,7 +202,9 @@ const Chat = () => {
                     : 'bg-card border border-border'
                 }`}
               >
-                <p className="break-words">{msg.text}</p>
+                <p className={`break-words ${msg.deleted ? 'italic opacity-60' : ''}`}>
+                  {msg.text}
+                </p>
                 <div className="flex items-center gap-1 mt-1">
                   <span className={`text-xs ${msg.senderId === user?.uid ? 'text-white/70' : 'text-muted-foreground'}`}>
                     {formatTime(msg.timestamp)}
@@ -206,7 +216,7 @@ const Chat = () => {
                   )}
                 </div>
               </div>
-              {msg.senderId === user?.uid && (
+              {msg.senderId === user?.uid && !msg.deleted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
