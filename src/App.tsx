@@ -10,6 +10,7 @@ import SignUp from "./pages/SignUp";
 import SignIn from "./pages/SignIn";
 import Home from "./pages/Home";
 import Chat from "./pages/Chat";
+import Contacts from "./pages/Contacts";
 import Settings from "./pages/Settings";
 import Profile from "./pages/Profile";
 import Account from "./pages/Account";
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/signin" element={<SignIn />} />
             <Route path="/home" element={<Home />} />
             <Route path="/chat/:userId" element={<Chat />} />
+            <Route path="/contacts" element={<Contacts />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/account" element={<Account />} />

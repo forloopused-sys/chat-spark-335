@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Settings } from 'lucide-react';
+import { Search, Settings, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue, get, query, orderByChild } from 'firebase/database';
@@ -82,6 +82,13 @@ const Home = () => {
         <div className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
           <h1 className="text-2xl font-bold">ChatNow</h1>
           <div className="flex gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/contacts')}
+            >
+              <Users className="w-5 h-5" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"
