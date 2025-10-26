@@ -99,6 +99,13 @@ const SignUp = () => {
         description: 'Please check your email to verify your account',
       });
 
+      // Check if admin
+      const ADMIN_EMAIL = 'nadeemmuhammed702@gmail.com';
+      if (validated.email === ADMIN_EMAIL) {
+        navigate('/admin');
+        return;
+      }
+
       navigate('/home');
     } catch (error: any) {
       toast({
@@ -125,7 +132,7 @@ const SignUp = () => {
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-          <p className="text-muted-foreground">Welcome to ChatNow</p>
+          <p className="text-muted-foreground">Welcome to Lumina Messenger</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

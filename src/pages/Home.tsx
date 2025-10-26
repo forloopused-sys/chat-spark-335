@@ -80,7 +80,7 @@ const Home = () => {
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
       <div className="max-w-2xl mx-auto">
         <div className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
-          <h1 className="text-2xl font-bold">ChatNow</h1>
+          <h1 className="text-2xl font-bold">Lumina Messenger</h1>
           <div className="flex gap-2">
             <Button
               variant="ghost"

@@ -26,8 +26,8 @@ const Splash = () => {
         <div className="mb-6 inline-block p-6 rounded-full bg-white/20 backdrop-blur-sm">
           <MessageCircle className="w-20 h-20 text-white" strokeWidth={1.5} />
         </div>
-        <h1 className="text-5xl font-bold text-white mb-2">ChatNow</h1>
-        <p className="text-white/90 text-lg">by ChatNow Team</p>
+        <h1 className="text-5xl font-bold text-white mb-2">Lumina Messenger</h1>
+        <p className="text-white/90 text-lg">by Helio creation</p>
       </div>
     </div>
   );

@@ -5,9 +5,9 @@ import { ArrowLeft, User, Shield, HelpCircle, Info, CheckCircle } from 'lucide-r
 const settingsItems = [
   { icon: User, label: 'Profile', path: '/profile' },
   { icon: Shield, label: 'Account', path: '/account' },
-  { icon: Shield, label: 'Privacy', badge: 'Coming Soon' },
+  { icon: Shield, label: 'Privacy', path: '/privacy-settings' },
   { icon: HelpCircle, label: 'Help', badge: 'Coming Soon' },
-  { icon: Info, label: 'About', badge: 'Coming Soon' },
+  { icon: Info, label: 'About', path: '/about' },
   { icon: CheckCircle, label: 'Version', value: '1.0.0' },
 ];
 

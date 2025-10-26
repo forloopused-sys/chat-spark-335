@@ -43,7 +43,24 @@ const SignIn = () => {
         }
       }
 
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+
+      // Check if user is blocked
+      const userRef = ref(database, `users/${userCredential.user.uid}`);
+      const userSnapshot = await get(userRef);
+      
+      if (userSnapshot.exists() && userSnapshot.val().blocked) {
+        await auth.signOut();
+        navigate('/blocked');
+        return;
+      }
+
+      // Check if admin
+      const ADMIN_EMAIL = 'nadeemmuhammed702@gmail.com';
+      if (userCredential.user.email === ADMIN_EMAIL) {
+        navigate('/admin');
+        return;
+      }
 
       toast({
         title: 'Welcome Back!',
@@ -67,7 +84,7 @@ const SignIn = () => {
       <div className="max-w-md w-full">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Welcome Back</h1>
-          <p className="text-muted-foreground">Sign in to continue to ChatNow</p>
+          <p className="text-muted-foreground">Sign in to continue to Lumina Messenger</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

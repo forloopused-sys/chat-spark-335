@@ -34,7 +34,7 @@ const Welcome = () => {
               <MessageCircle className="w-16 h-16 text-white" strokeWidth={1.5} />
             </div>
             <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              Welcome to ChatNow
+              Welcome to Lumina Messenger
             </h1>
             <p className="text-muted-foreground text-lg mb-8">
               Connect with friends and family through secure, real-time messaging
@@ -59,7 +59,7 @@ const Welcome = () => {
           </div>
         ) : (
           <div className="animate-fade-in">
-            <h2 className="text-3xl font-bold mb-8 text-center">Why ChatNow?</h2>
+            <h2 className="text-3xl font-bold mb-8 text-center">Why Lumina Messenger?</h2>
             <div className="space-y-6 mb-8">
               {features.map((feature, index) => (
                 <div 

@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Send, MoreVertical } from 'lucide-react';
+import { ArrowLeft, Send, MoreVertical, Copy, Info, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
-import { ref, onValue, push, set, get, serverTimestamp, remove } from 'firebase/database';
+import { ref, onValue, push, set, get, remove } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -13,15 +13,23 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface Message {
   id: string;
   senderId: string;
   text: string;
   timestamp: number;
-  status: 'sent' | 'seen';
+  status: 'sent' | 'delivered' | 'read';
   deleted?: boolean;
   edited?: boolean;
+  deliveredAt?: number;
+  readAt?: number;
 }
 
 const Chat = () => {
@@ -34,6 +42,8 @@ const Chat = () => {
   const [otherUser, setOtherUser] = useState<any>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [messageInfo, setMessageInfo] = useState<Message | null>(null);
+  const [showInfo, setShowInfo] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -211,12 +221,12 @@ const Chat = () => {
                   </span>
                   {msg.senderId === user?.uid && (
                     <span className="text-xs text-white/70">
-                      {msg.status === 'seen' ? '✓✓' : '✓'}
+                      {msg.status === 'read' ? <span className="text-blue-400">✓✓</span> : msg.status === 'delivered' ? '✓✓' : '✓'}
                     </span>
                   )}
                 </div>
               </div>
-              {msg.senderId === user?.uid && !msg.deleted && (
+              {!msg.deleted && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -228,15 +238,24 @@ const Chat = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => {
-                      setMessage(msg.text);
-                      setEditingMessageId(msg.id);
-                    }}>
-                      Edit
+                    <DropdownMenuItem onClick={() => navigator.clipboard.writeText(msg.text)}>
+                      <Copy className="w-4 h-4 mr-2" />
+                      Copy
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => deleteMessage(msg.id)}>
-                      Delete
-                    </DropdownMenuItem>
+                    {msg.senderId === user?.uid && (
+                      <>
+                        <DropdownMenuItem onClick={() => {
+                          setMessage(msg.text);
+                          setEditingMessageId(msg.id);
+                        }}>
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => deleteMessage(msg.id)}>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}
