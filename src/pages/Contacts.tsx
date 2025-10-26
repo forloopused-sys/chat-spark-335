@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, User } from 'lucide-react';
+import { ArrowLeft, Search, User, MessageSquare, CheckCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
@@ -13,6 +13,8 @@ interface UserProfile {
   name: string;
   email: string;
   status: string;
+  verified?: boolean;
+  profilePic?: string;
 }
 
 const Contacts = () => {
@@ -99,11 +101,24 @@ const Contacts = () => {
               onClick={() => handleUserClick(userProfile.uid)}
               className="bg-card border border-border rounded-xl p-4 flex items-center gap-3 cursor-pointer hover:bg-accent/10 transition-colors"
             >
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-lg">
-                {userProfile.username[0].toUpperCase()}
-              </div>
+              {userProfile.profilePic ? (
+                <img
+                  src={userProfile.profilePic}
+                  alt={userProfile.username}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-lg">
+                  {userProfile.username[0].toUpperCase()}
+                </div>
+              )}
               <div className="flex-1">
-                <div className="font-semibold">@{userProfile.username}</div>
+                <div className="font-semibold flex items-center gap-2">
+                  @{userProfile.username}
+                  {userProfile.verified && (
+                    <CheckCircle className="w-4 h-4 text-primary fill-primary" />
+                  )}
+                </div>
                 <div className="text-sm text-muted-foreground">{userProfile.name}</div>
               </div>
               <div className={`w-3 h-3 rounded-full ${
@@ -112,6 +127,16 @@ const Contacts = () => {
             </div>
           ))
         )}
+      </div>
+
+      <div className="fixed bottom-6 right-6">
+        <Button
+          size="icon"
+          onClick={() => navigate('/home')}
+          className="w-14 h-14 rounded-full bg-gradient-to-r from-primary to-accent hover:opacity-90 shadow-lg"
+        >
+          <MessageSquare className="w-6 h-6" />
+        </Button>
       </div>
     </div>
   );

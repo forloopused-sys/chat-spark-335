@@ -19,6 +19,7 @@ const Profile = () => {
     age: '',
     username: '',
     email: '',
+    profilePic: '',
   });
   const [loading, setLoading] = useState(false);
 
@@ -82,8 +83,35 @@ const Profile = () => {
 
         <div className="p-4 space-y-4">
           <div className="flex justify-center mb-6">
-            <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold">
-              {profile.name?.[0]?.toUpperCase() || 'U'}
+            {profile.profilePic ? (
+              <img
+                src={profile.profilePic}
+                alt="Profile"
+                className="w-24 h-24 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold">
+                {profile.name?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <Label htmlFor="profilePic">Profile Picture URL</Label>
+            <div className="flex gap-2 mt-1">
+              <Input
+                id="profilePic"
+                name="profilePic"
+                value={profile.profilePic}
+                onChange={handleChange}
+                placeholder="Paste image URL"
+              />
+              <Button
+                onClick={() => window.open('https://luminamessanger.page.gd', '_blank')}
+                variant="outline"
+              >
+                Upload
+              </Button>
             </div>
           </div>
 

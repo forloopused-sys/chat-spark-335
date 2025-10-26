@@ -22,6 +22,7 @@ import Notifications from "./pages/Notifications";
 import About from "./pages/About";
 import PrivacySettings from "./pages/PrivacySettings";
 import Archive from "./pages/Archive";
+import Locked from "./pages/Locked";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,7 @@ const App = () => (
             <Route path="/about" element={<About />} />
             <Route path="/privacy-settings" element={<PrivacySettings />} />
             <Route path="/archive" element={<Archive />} />
+            <Route path="/locked" element={<Locked />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

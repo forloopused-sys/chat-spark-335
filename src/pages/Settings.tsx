@@ -1,18 +1,31 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, User, Shield, HelpCircle, Info, CheckCircle } from 'lucide-react';
-
-const settingsItems = [
-  { icon: User, label: 'Profile', path: '/profile' },
-  { icon: Shield, label: 'Account', path: '/account' },
-  { icon: Shield, label: 'Privacy', path: '/privacy-settings' },
-  { icon: HelpCircle, label: 'Help', badge: 'Coming Soon' },
-  { icon: Info, label: 'About', path: '/about' },
-  { icon: CheckCircle, label: 'Version', value: '1.0.0' },
-];
+import { database } from '@/lib/firebase';
+import { ref, onValue } from 'firebase/database';
 
 const Settings = () => {
   const navigate = useNavigate();
+  const [helpLink, setHelpLink] = useState('');
+
+  useEffect(() => {
+    const settingsRef = ref(database, 'settings/helpLink');
+    onValue(settingsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setHelpLink(snapshot.val());
+      }
+    });
+  }, []);
+
+  const settingsItems = [
+    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: Shield, label: 'Account', path: '/account' },
+    { icon: Shield, label: 'Privacy', path: '/privacy-settings' },
+    { icon: HelpCircle, label: 'Help', link: helpLink, badge: !helpLink ? 'Coming Soon' : undefined },
+    { icon: Info, label: 'About', path: '/about' },
+    { icon: CheckCircle, label: 'Version', value: '1.0.0' },
+  ];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
@@ -32,9 +45,12 @@ const Settings = () => {
           {settingsItems.map((item, index) => (
             <div
               key={index}
-              onClick={() => item.path && navigate(item.path)}
+              onClick={() => {
+                if (item.path) navigate(item.path);
+                else if (item.link) window.open(item.link, '_blank');
+              }}
               className={`p-4 flex items-center gap-4 ${
-                item.path ? 'hover:bg-accent/50 cursor-pointer' : ''
+                item.path || item.link ? 'hover:bg-accent/50 cursor-pointer' : ''
               } transition-colors`}
             >
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white">

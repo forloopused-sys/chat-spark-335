@@ -53,7 +53,7 @@ const Chat = () => {
     const chatId = [user.uid, userId].sort().join('_');
     const messagesRef = ref(database, `messages/${chatId}`);
     
-    const unsubscribe = onValue(messagesRef, (snapshot) => {
+    const unsubscribe = onValue(messagesRef, async (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
         const messageList: Message[] = Object.entries(data).map(([id, msg]: any) => ({
@@ -62,6 +62,22 @@ const Chat = () => {
         }));
         messageList.sort((a, b) => a.timestamp - b.timestamp);
         setMessages(messageList);
+
+        // Update message status to delivered/read
+        for (const msg of messageList) {
+          if (msg.senderId !== user.uid) {
+            const messageRef = ref(database, `messages/${chatId}/${msg.id}`);
+            if (msg.status === 'sent') {
+              await set(messageRef, { ...msg, status: 'delivered', deliveredAt: Date.now() });
+            } else if (msg.status === 'delivered') {
+              await set(messageRef, { ...msg, status: 'read', readAt: Date.now() });
+            }
+          }
+        }
+
+        // Clear unread count
+        const chatRef = ref(database, `userChats/${user.uid}/${chatId}/unreadCount`);
+        await set(chatRef, 0);
       } else {
         setMessages([]);
       }
@@ -141,6 +157,7 @@ const Chat = () => {
       await set(myChatsRef, {
         lastMessage: message,
         timestamp: Date.now(),
+        unreadCount: 0,
       });
     }
 
@@ -242,6 +259,13 @@ const Chat = () => {
                       <Copy className="w-4 h-4 mr-2" />
                       Copy
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => {
+                      setMessageInfo(msg);
+                      setShowInfo(true);
+                    }}>
+                      <Info className="w-4 h-4 mr-2" />
+                      Info
+                    </DropdownMenuItem>
                     {msg.senderId === user?.uid && (
                       <>
                         <DropdownMenuItem onClick={() => {
@@ -297,6 +321,38 @@ const Chat = () => {
           </Button>
         </div>
       </div>
+
+      <Dialog open={showInfo} onOpenChange={setShowInfo}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message Info</DialogTitle>
+          </DialogHeader>
+          {messageInfo && (
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm text-muted-foreground">Message</p>
+                <p className="font-medium">{messageInfo.text}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Sent</p>
+                <p>{new Date(messageInfo.timestamp).toLocaleString()}</p>
+              </div>
+              {messageInfo.deliveredAt && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Delivered</p>
+                  <p>{new Date(messageInfo.deliveredAt).toLocaleString()}</p>
+                </div>
+              )}
+              {messageInfo.readAt && (
+                <div>
+                  <p className="text-sm text-muted-foreground">Read</p>
+                  <p>{new Date(messageInfo.readAt).toLocaleString()}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Users, Shield, Bell, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Bell, CheckCircle, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
-import { ref, onValue, set, push } from 'firebase/database';
+import { ref, onValue, set, push, remove } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
@@ -24,6 +24,8 @@ const AdminDashboard = () => {
     imageUrl: '',
   });
   const [helpLink, setHelpLink] = useState('');
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [editingNotifId, setEditingNotifId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || user.email !== ADMIN_EMAIL) {
@@ -51,7 +53,24 @@ const AdminDashboard = () => {
       }
     });
 
-    return () => unsubscribe();
+    const notificationsRef = ref(database, 'notifications');
+    const notifUnsubscribe = onValue(notificationsRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const notifList = Object.entries(data).map(([id, notif]: any) => ({
+          id,
+          ...notif,
+        }));
+        setNotifications(notifList.sort((a, b) => b.timestamp - a.timestamp));
+      } else {
+        setNotifications([]);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      notifUnsubscribe();
+    };
   }, [user, navigate]);
 
   const toggleBlockUser = async (userId: string, currentStatus: boolean) => {
@@ -82,18 +101,50 @@ const AdminDashboard = () => {
       return;
     }
 
-    const notificationsRef = ref(database, 'notifications');
-    await push(notificationsRef, {
-      ...notificationData,
-      timestamp: Date.now(),
-      from: 'admin',
-    });
+    if (editingNotifId) {
+      const notifRef = ref(database, `notifications/${editingNotifId}`);
+      await set(notifRef, {
+        ...notificationData,
+        timestamp: Date.now(),
+        from: 'admin',
+      });
+      setEditingNotifId(null);
+      toast({
+        title: 'Notification Updated',
+        description: 'Notification has been updated',
+      });
+    } else {
+      const notificationsRef = ref(database, 'notifications');
+      await push(notificationsRef, {
+        ...notificationData,
+        timestamp: Date.now(),
+        from: 'admin',
+      });
+      toast({
+        title: 'Notification Sent',
+        description: 'Notification has been sent to all users',
+      });
+    }
 
     setNotificationData({ message: '', videoUrl: '', imageUrl: '' });
+  };
+
+  const deleteNotification = async (notifId: string) => {
+    const notifRef = ref(database, `notifications/${notifId}`);
+    await remove(notifRef);
     toast({
-      title: 'Notification Sent',
-      description: 'Notification has been sent to all users',
+      title: 'Notification Deleted',
+      description: 'Notification has been removed',
     });
+  };
+
+  const editNotification = (notif: any) => {
+    setNotificationData({
+      message: notif.message,
+      videoUrl: notif.videoUrl || '',
+      imageUrl: notif.imageUrl || '',
+    });
+    setEditingNotifId(notif.id);
   };
 
   const updateHelpLink = async () => {
@@ -176,10 +227,10 @@ const AdminDashboard = () => {
             </TabsContent>
 
             <TabsContent value="notifications" className="mt-4">
-              <div className="bg-card border border-border rounded-lg p-6">
+              <div className="bg-card border border-border rounded-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                   <Bell className="w-5 h-5" />
-                  Send Notification
+                  {editingNotifId ? 'Edit Notification' : 'Send Notification'}
                 </h3>
                 <div className="space-y-4">
                   <div>
@@ -207,9 +258,62 @@ const AdminDashboard = () => {
                       placeholder="Image URL"
                     />
                   </div>
-                  <Button onClick={sendNotification} className="w-full">
-                    Send Notification
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={sendNotification} className="flex-1">
+                      {editingNotifId ? 'Update Notification' : 'Send Notification'}
+                    </Button>
+                    {editingNotifId && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingNotifId(null);
+                          setNotificationData({ message: '', videoUrl: '', imageUrl: '' });
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg">
+                <div className="p-4 border-b border-border">
+                  <h3 className="font-semibold">Sent Notifications</h3>
+                </div>
+                <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                  {notifications.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      No notifications sent yet
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <div key={notif.id} className="p-4">
+                        <p className="font-medium mb-2">{notif.message}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(notif.timestamp).toLocaleString()}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => editNotification(notif)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteNotification(notif.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </TabsContent>
