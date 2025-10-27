@@ -6,6 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue, set } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 
 interface Notification {
   id: string;
@@ -24,6 +25,7 @@ const Notifications = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -152,13 +154,14 @@ const Notifications = () => {
                       <img
                         src={notification.imageUrl}
                         alt="Notification"
-                        className="rounded-lg mb-3 max-h-48 object-cover"
+                        className="rounded-lg mb-3 max-h-48 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => setFullscreenImage(notification.imageUrl)}
                       />
                     )}
                     {notification.videoUrl && (
                       <div className="aspect-video rounded-lg overflow-hidden mb-3">
                         <iframe
-                          src={notification.videoUrl}
+                          src={notification.videoUrl.replace('m.youtube.com', 'www.youtube.com').replace('watch?v=', 'embed/')}
                           className="w-full h-full"
                           allowFullScreen
                         />
@@ -176,6 +179,22 @@ const Notifications = () => {
           )}
         </div>
       </div>
+      
+      <Dialog open={!!fullscreenImage} onOpenChange={() => setFullscreenImage(null)}>
+        <DialogContent className="max-w-4xl p-0 bg-black/90">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-4 right-4 text-white hover:bg-white/20 z-50"
+          >
+            <X className="w-6 h-6" />
+          </Button>
+          {fullscreenImage && (
+            <img src={fullscreenImage} alt="Full screen" className="w-full h-auto" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

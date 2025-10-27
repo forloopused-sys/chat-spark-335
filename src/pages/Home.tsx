@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, Settings, Users, Bell, Archive, Lock, CheckCircle, MessageSquare } from 'lucide-react';
+import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue, get, set } from 'firebase/database';
@@ -22,6 +23,7 @@ interface Chat {
   verified?: boolean;
   archived?: boolean;
   locked?: boolean;
+  profilePic?: string;
 }
 
 const Home = () => {
@@ -66,6 +68,7 @@ const Home = () => {
                 timestamp: chat.timestamp || 0,
                 unreadCount: chat.unreadCount || 0,
                 verified: userData.verified || false,
+                profilePic: userData.profilePic || '',
               });
             }
             if (chat.archived) archivedCount++;
@@ -152,10 +155,10 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
+    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 pb-16 md:pb-0">
       <div className="max-w-2xl mx-auto">
         <div className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => hasArchivedChats && navigate('/archive')}>
+          <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold">Lumina Messenger</h1>
           </div>
           <div className="flex gap-2">
@@ -175,21 +178,24 @@ const Home = () => {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate('/contacts')}
-            >
-              <Users className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
               onClick={() => setShowSearch(!showSearch)}
+              className="md:flex"
             >
               <Search className="w-5 h-5" />
             </Button>
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => navigate('/contacts')}
+              className="hidden md:flex"
+            >
+              <Users className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => navigate('/settings')}
+              className="hidden md:flex"
             >
               <Settings className="w-5 h-5" />
             </Button>
@@ -251,9 +257,17 @@ const Home = () => {
                 }}
                 className="p-4 hover:bg-accent/50 cursor-pointer transition-colors flex items-center gap-4 relative"
               >
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold">
-                  {chat.username[0].toUpperCase()}
-                </div>
+                {chat.profilePic ? (
+                  <img
+                    src={chat.profilePic}
+                    alt="Profile"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold">
+                    {chat.username[0].toUpperCase()}
+                  </div>
+                )}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-semibold">@{chat.username}</span>
@@ -300,7 +314,7 @@ const Home = () => {
           )}
         </div>
 
-        <div className="fixed bottom-6 right-6">
+        <div className="fixed bottom-20 right-6 md:bottom-6">
           <Button
             size="icon"
             onClick={() => navigate('/contacts')}
@@ -310,6 +324,7 @@ const Home = () => {
           </Button>
         </div>
       </div>
+      <BottomNav />
     </div>
   );
 };

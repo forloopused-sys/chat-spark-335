@@ -24,6 +24,9 @@ import PrivacySettings from "./pages/PrivacySettings";
 import Archive from "./pages/Archive";
 import Locked from "./pages/Locked";
 import NotFound from "./pages/NotFound";
+import UserDetail from "./pages/UserDetail";
+import Version from "./pages/Version";
+import Maintenance from "./pages/Maintenance";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +58,9 @@ const App = () => (
             <Route path="/privacy-settings" element={<PrivacySettings />} />
             <Route path="/archive" element={<Archive />} />
             <Route path="/locked" element={<Locked />} />
+            <Route path="/user/:userId" element={<UserDetail />} />
+            <Route path="/version" element={<Version />} />
+            <Route path="/maintenance" element={<Maintenance />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

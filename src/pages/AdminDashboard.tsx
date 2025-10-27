@@ -26,6 +26,11 @@ const AdminDashboard = () => {
   const [helpLink, setHelpLink] = useState('');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [editingNotifId, setEditingNotifId] = useState<string | null>(null);
+  const [version, setVersion] = useState('1.0.0');
+  const [newFeature, setNewFeature] = useState('');
+  const [whatsNew, setWhatsNew] = useState<any[]>([]);
+  const [editingFeatureId, setEditingFeatureId] = useState<string | null>(null);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   useEffect(() => {
     if (!user || user.email !== ADMIN_EMAIL) {
@@ -64,6 +69,34 @@ const AdminDashboard = () => {
         setNotifications(notifList.sort((a, b) => b.timestamp - a.timestamp));
       } else {
         setNotifications([]);
+      }
+    });
+
+    const versionRef = ref(database, 'settings/version');
+    onValue(versionRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setVersion(snapshot.val());
+      }
+    });
+
+    const whatsNewRef = ref(database, 'settings/whatsNew');
+    onValue(whatsNewRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        const featuresList = Object.entries(data).map(([id, feature]: any) => ({
+          id,
+          ...feature,
+        }));
+        setWhatsNew(featuresList.sort((a, b) => b.timestamp - a.timestamp));
+      } else {
+        setWhatsNew([]);
+      }
+    });
+
+    const maintenanceRef = ref(database, 'settings/maintenance');
+    onValue(maintenanceRef, (snapshot) => {
+      if (snapshot.exists()) {
+        setMaintenanceMode(snapshot.val());
       }
     });
 
@@ -156,6 +189,75 @@ const AdminDashboard = () => {
     });
   };
 
+  const updateVersion = async () => {
+    const versionRef = ref(database, 'settings/version');
+    await set(versionRef, version);
+    toast({
+      title: 'Version Updated',
+      description: `App version set to ${version}`,
+    });
+  };
+
+  const addFeature = async () => {
+    if (!newFeature.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Feature description is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (editingFeatureId) {
+      const featureRef = ref(database, `settings/whatsNew/${editingFeatureId}`);
+      await set(featureRef, {
+        text: newFeature,
+        timestamp: Date.now(),
+      });
+      setEditingFeatureId(null);
+      toast({
+        title: 'Feature Updated',
+        description: 'Feature has been updated',
+      });
+    } else {
+      const whatsNewRef = ref(database, 'settings/whatsNew');
+      await push(whatsNewRef, {
+        text: newFeature,
+        timestamp: Date.now(),
+      });
+      toast({
+        title: 'Feature Added',
+        description: 'New feature has been added',
+      });
+    }
+    setNewFeature('');
+  };
+
+  const deleteFeature = async (featureId: string) => {
+    const featureRef = ref(database, `settings/whatsNew/${featureId}`);
+    await remove(featureRef);
+    toast({
+      title: 'Feature Deleted',
+      description: 'Feature has been removed',
+    });
+  };
+
+  const editFeature = (feature: any) => {
+    setNewFeature(feature.text);
+    setEditingFeatureId(feature.id);
+  };
+
+  const toggleMaintenance = async () => {
+    const maintenanceRef = ref(database, 'settings/maintenance');
+    await set(maintenanceRef, !maintenanceMode);
+    toast({
+      title: maintenanceMode ? 'Maintenance Disabled' : 'Maintenance Enabled',
+      description: maintenanceMode 
+        ? 'App is now accessible to all users'
+        : 'App is now in maintenance mode',
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
       <div className="max-w-6xl mx-auto">
@@ -181,9 +283,11 @@ const AdminDashboard = () => {
           </div>
 
           <Tabs defaultValue="users" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="users">Users</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="version">Version</TabsTrigger>
+              <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
               <TabsTrigger value="settings">Settings</TabsTrigger>
             </TabsList>
 
@@ -314,6 +418,115 @@ const AdminDashboard = () => {
                       </div>
                     ))
                   )}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="version" className="mt-4">
+              <div className="bg-card border border-border rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4">App Version</h3>
+                <div className="space-y-4">
+                  <Input
+                    value={version}
+                    onChange={(e) => setVersion(e.target.value)}
+                    placeholder="1.0.0"
+                  />
+                  <Button onClick={updateVersion} className="w-full">
+                    Update Version
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg p-6 mb-6">
+                <h3 className="text-lg font-semibold mb-4">
+                  {editingFeatureId ? 'Edit Feature' : 'Add New Feature'}
+                </h3>
+                <div className="space-y-4">
+                  <Textarea
+                    value={newFeature}
+                    onChange={(e) => setNewFeature(e.target.value)}
+                    placeholder="Enter new feature description"
+                    rows={3}
+                  />
+                  <div className="flex gap-2">
+                    <Button onClick={addFeature} className="flex-1">
+                      {editingFeatureId ? 'Update Feature' : 'Add Feature'}
+                    </Button>
+                    {editingFeatureId && (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingFeatureId(null);
+                          setNewFeature('');
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-card border border-border rounded-lg">
+                <div className="p-4 border-b border-border">
+                  <h3 className="font-semibold">What's New Features</h3>
+                </div>
+                <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                  {whatsNew.length === 0 ? (
+                    <div className="p-8 text-center text-muted-foreground">
+                      No features added yet
+                    </div>
+                  ) : (
+                    whatsNew.map((feature) => (
+                      <div key={feature.id} className="p-4">
+                        <p className="mb-2">{feature.text}</p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(feature.timestamp).toLocaleString()}
+                          </span>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => editFeature(feature)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => deleteFeature(feature.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="maintenance" className="mt-4">
+              <div className="bg-card border border-border rounded-lg p-6">
+                <h3 className="text-lg font-semibold mb-4">Maintenance Mode</h3>
+                <p className="text-sm text-muted-foreground mb-6">
+                  When enabled, all users (except admin) will be redirected to a maintenance page.
+                </p>
+                <div className="flex items-center justify-between p-4 bg-muted rounded-lg mb-4">
+                  <div>
+                    <div className="font-medium">Maintenance Mode</div>
+                    <div className="text-sm text-muted-foreground">
+                      {maintenanceMode ? 'Currently Active' : 'Currently Inactive'}
+                    </div>
+                  </div>
+                  <Button
+                    variant={maintenanceMode ? 'destructive' : 'default'}
+                    onClick={toggleMaintenance}
+                  >
+                    {maintenanceMode ? 'Disable' : 'Enable'}
+                  </Button>
                 </div>
               </div>
             </TabsContent>

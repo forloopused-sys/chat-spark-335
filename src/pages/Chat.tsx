@@ -196,7 +196,7 @@ const Chat = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-background to-secondary/30">
-      <div className="bg-card border-b border-border p-4 flex items-center gap-3">
+      <div className="bg-card border-b border-border p-4 flex items-center gap-3 sticky top-0 z-10">
         <Button
           variant="ghost"
           size="icon"
@@ -204,13 +204,26 @@ const Chat = () => {
         >
           <ArrowLeft className="w-5 h-5" />
         </Button>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold">
-          {otherUser?.username?.[0]?.toUpperCase()}
-        </div>
-        <div className="flex-1">
-          <div className="font-semibold">@{otherUser?.username}</div>
-          <div className="text-xs text-muted-foreground">
-            {otherUser?.status === 'online' ? 'Online' : `Last seen ${otherUser?.lastSeen ? formatTime(otherUser.lastSeen) : 'recently'}`}
+        <div
+          className="flex items-center gap-3 flex-1 cursor-pointer"
+          onClick={() => navigate(`/user/${userId}`)}
+        >
+          {otherUser?.profilePic ? (
+            <img
+              src={otherUser.profilePic}
+              alt="Profile"
+              className="w-10 h-10 rounded-full object-cover"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-semibold">
+              {otherUser?.username?.[0]?.toUpperCase()}
+            </div>
+          )}
+          <div className="flex-1">
+            <div className="font-semibold">@{otherUser?.username}</div>
+            <div className="text-xs text-muted-foreground">
+              {otherUser?.status === 'online' ? 'Online' : `Last seen ${otherUser?.lastSeen ? formatTime(otherUser.lastSeen) : 'recently'}`}
+            </div>
           </div>
         </div>
       </div>
@@ -266,7 +279,7 @@ const Chat = () => {
                       <Info className="w-4 h-4 mr-2" />
                       Info
                     </DropdownMenuItem>
-                    {msg.senderId === user?.uid && (
+                    {msg.senderId === user?.uid && Date.now() - msg.timestamp < 24 * 60 * 60 * 1000 && (
                       <>
                         <DropdownMenuItem onClick={() => {
                           setMessage(msg.text);
@@ -300,7 +313,7 @@ const Chat = () => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="bg-card border-t border-border p-4">
+      <div className="bg-card border-t border-border p-4 sticky bottom-0 z-10">
         <div className="flex gap-2">
           <Input
             value={message}

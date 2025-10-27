@@ -22,6 +22,8 @@ const Profile = () => {
     profilePic: '',
   });
   const [loading, setLoading] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [newUsername, setNewUsername] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -55,6 +57,63 @@ const Profile = () => {
       toast({
         title: 'Profile Updated',
         description: 'Your profile has been saved successfully',
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Update Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUsernameChange = async () => {
+    if (!user || !newUsername.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter a username',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Check if username is unique
+    const usersRef = ref(database, 'users');
+    const snapshot = await get(usersRef);
+    if (snapshot.exists()) {
+      const users = snapshot.val();
+      const usernameExists = Object.values(users).some(
+        (u: any) => u.username === newUsername && u.uid !== user.uid
+      );
+      
+      if (usernameExists) {
+        toast({
+          title: 'Username Taken',
+          description: 'This username is already in use',
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+    try {
+      const userRef = ref(database, `users/${user.uid}`);
+      await set(userRef, {
+        ...profile,
+        username: newUsername,
+        updatedAt: Date.now(),
+      });
+
+      setProfile({ ...profile, username: newUsername });
+      setIsEditingUsername(false);
+      setNewUsername('');
+
+      toast({
+        title: 'Username Updated',
+        description: `Your new username is @${newUsername}`,
       });
     } catch (error: any) {
       toast({
@@ -150,16 +209,58 @@ const Profile = () => {
 
           <div>
             <Label htmlFor="username">Username</Label>
-            <Input
-              id="username"
-              name="username"
-              value={profile.username}
-              disabled
-              className="mt-1 bg-muted"
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Username cannot be changed
-            </p>
+            {isEditingUsername ? (
+              <div className="flex gap-2 mt-1">
+                <Input
+                  id="newUsername"
+                  name="newUsername"
+                  value={newUsername}
+                  onChange={(e) => setNewUsername(e.target.value)}
+                  placeholder="@username"
+                />
+                <Button
+                  onClick={handleUsernameChange}
+                  disabled={loading}
+                  variant="outline"
+                >
+                  Save
+                </Button>
+                <Button
+                  onClick={() => {
+                    setIsEditingUsername(false);
+                    setNewUsername('');
+                  }}
+                  variant="ghost"
+                >
+                  Cancel
+                </Button>
+              </div>
+            ) : (
+              <>
+                <Input
+                  id="username"
+                  name="username"
+                  value={profile.username}
+                  disabled
+                  className="mt-1 bg-muted"
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    Current username: @{profile.username}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditingUsername(true);
+                      setNewUsername(profile.username);
+                    }}
+                  >
+                    Change
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
 
           <div>

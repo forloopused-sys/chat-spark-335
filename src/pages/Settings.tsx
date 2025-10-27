@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, User, Shield, HelpCircle, Info, CheckCircle } from 'lucide-react';
-import { database } from '@/lib/firebase';
+import { ArrowLeft, User, Shield, HelpCircle, Info, CheckCircle, LogOut } from 'lucide-react';
+import { database, auth } from '@/lib/firebase';
 import { ref, onValue } from 'firebase/database';
+import { signOut } from 'firebase/auth';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -18,13 +19,18 @@ const Settings = () => {
     });
   }, []);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    navigate('/signin');
+  };
+
   const settingsItems = [
     { icon: User, label: 'Profile', path: '/profile' },
     { icon: Shield, label: 'Account', path: '/account' },
     { icon: Shield, label: 'Privacy', path: '/privacy-settings' },
+    { icon: CheckCircle, label: 'Version', path: '/version' },
     { icon: HelpCircle, label: 'Help', link: helpLink, badge: !helpLink ? 'Coming Soon' : undefined },
     { icon: Info, label: 'About', path: '/about' },
-    { icon: CheckCircle, label: 'Version', value: '1.0.0' },
   ];
 
   return (
@@ -58,9 +64,6 @@ const Settings = () => {
               </div>
               <div className="flex-1">
                 <div className="font-medium">{item.label}</div>
-                {item.value && (
-                  <div className="text-sm text-muted-foreground">{item.value}</div>
-                )}
               </div>
               {item.badge && (
                 <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground">
@@ -69,6 +72,18 @@ const Settings = () => {
               )}
             </div>
           ))}
+
+          <div
+            onClick={handleLogout}
+            className="p-4 flex items-center gap-4 hover:bg-accent/50 cursor-pointer transition-colors"
+          >
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-destructive to-red-600 flex items-center justify-center text-white">
+              <LogOut className="w-5 h-5" />
+            </div>
+            <div className="flex-1">
+              <div className="font-medium text-destructive">Logout</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
