@@ -103,7 +103,28 @@ const SignIn = () => {
       setFailedAttempts(0);
       setCooldownUntil(null);
 
-      // Check if admin
+      // Check if user is admin by email or existing admin record
+      const ADMIN_EMAIL = 'nadeemmuhammed702@gmail.com';
+      const isAdminEmail = userCredential.user.email === ADMIN_EMAIL;
+      
+      if (isAdminEmail) {
+        // Set admin status in database
+        const adminRef = ref(database, `admins/${userCredential.user.uid}`);
+        await set(adminRef, true);
+        
+        toast({
+          title: 'Welcome Back Admin!',
+          description: 'Redirecting to dashboard...',
+        });
+        
+        setLoading(false);
+        setTimeout(() => {
+          navigate('/admin');
+        }, 300);
+        return;
+      }
+      
+      // Check existing admin record
       const adminRef = ref(database, `admins/${userCredential.user.uid}`);
       const adminSnap = await get(adminRef);
       
@@ -112,9 +133,11 @@ const SignIn = () => {
           title: 'Welcome Back Admin!',
           description: 'Redirecting to dashboard...',
         });
+        
+        setLoading(false);
         setTimeout(() => {
           navigate('/admin');
-        }, 500);
+        }, 300);
         return;
       }
 
@@ -169,6 +192,26 @@ const SignIn = () => {
           setShow2FA(false);
 
           // Check if admin
+          const ADMIN_EMAIL = 'nadeemmuhammed702@gmail.com';
+          const isAdminEmail = pendingUser.email === ADMIN_EMAIL;
+          
+          if (isAdminEmail) {
+            // Set admin status in database
+            const adminRef = ref(database, `admins/${pendingUser.uid}`);
+            await set(adminRef, true);
+            
+            toast({
+              title: 'Welcome Back Admin!',
+              description: 'Redirecting to dashboard...',
+            });
+            
+            setTimeout(() => {
+              navigate('/admin');
+            }, 300);
+            return;
+          }
+          
+          // Check existing admin record
           const adminRef = ref(database, `admins/${pendingUser.uid}`);
           const adminSnap = await get(adminRef);
           
@@ -177,9 +220,10 @@ const SignIn = () => {
               title: 'Welcome Back Admin!',
               description: 'Redirecting to dashboard...',
             });
+            
             setTimeout(() => {
               navigate('/admin');
-            }, 500);
+            }, 300);
             return;
           }
 
