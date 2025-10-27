@@ -108,7 +108,11 @@ const SignIn = () => {
       const adminSnap = await get(adminRef);
       
       if (adminSnap.exists()) {
-        navigate('/admin');
+        toast({
+          title: 'Welcome Back Admin!',
+          description: 'Redirecting to dashboard...',
+        });
+        setTimeout(() => navigate('/admin'), 100);
         return;
       }
 
@@ -167,7 +171,11 @@ const SignIn = () => {
           const adminSnap = await get(adminRef);
           
           if (adminSnap.exists()) {
-            navigate('/admin');
+            toast({
+              title: 'Welcome Back Admin!',
+              description: 'Redirecting to dashboard...',
+            });
+            setTimeout(() => navigate('/admin'), 100);
             return;
           }
 
