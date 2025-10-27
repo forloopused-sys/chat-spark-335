@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,6 +22,25 @@ const SignIn = () => {
   const [pendingUser, setPendingUser] = useState<any>(null);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Auto-login if cookies are saved and consent is accepted
+    const autoLoginEnabled = localStorage.getItem('autoLoginEnabled');
+    const consentStatus = localStorage.getItem('cookieConsent');
+    const savedEmail = localStorage.getItem('rememberedEmail');
+    const savedPassword = localStorage.getItem('rememberedPassword');
+
+    if (autoLoginEnabled === 'true' && consentStatus === 'accepted' && savedEmail && savedPassword) {
+      setEmailOrUsername(savedEmail);
+      setPassword(savedPassword);
+      setRememberMe(true);
+      // Optionally auto-submit
+      setTimeout(() => {
+        const form = document.querySelector('form');
+        if (form) form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+      }, 500);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +116,16 @@ const SignIn = () => {
         setShow2FA(true);
         setLoading(false);
         return;
+      }
+
+      // Save to cookies if remember me is checked
+      if (rememberMe) {
+        const consentStatus = localStorage.getItem('cookieConsent');
+        if (consentStatus === 'accepted') {
+          localStorage.setItem('rememberedEmail', emailOrUsername);
+          localStorage.setItem('rememberedPassword', password);
+          localStorage.setItem('autoLoginEnabled', 'true');
+        }
       }
 
       // Reset failed attempts on success

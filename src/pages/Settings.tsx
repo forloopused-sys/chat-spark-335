@@ -20,6 +20,11 @@ const Settings = () => {
   }, []);
 
   const handleLogout = async () => {
+    // Clear cookies on logout
+    localStorage.removeItem('rememberedEmail');
+    localStorage.removeItem('rememberedPassword');
+    localStorage.removeItem('autoLoginEnabled');
+    
     await signOut(auth);
     navigate('/signin');
   };

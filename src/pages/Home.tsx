@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, Users, Bell, Archive, Lock, BadgeCheck, MessageSquare } from 'lucide-react';
+import { Search, Settings, Users, Bell, Archive, Lock, BadgeCheck, MessageSquare, Bot, User } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
@@ -34,6 +34,7 @@ const Home = () => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<string | null>(null);
   const [notificationCount, setNotificationCount] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [hasArchivedChats, setHasArchivedChats] = useState(false);
   const [hasLockedChats, setHasLockedChats] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -95,16 +96,30 @@ const Home = () => {
     const notifUnsubscribe = onValue(notifRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
-        const unreadCount = Object.values(data).filter((n: any) => !n.read).length;
-        setNotificationCount(unreadCount);
+        const total = Object.keys(data).length;
+        const unread = Object.values(data).filter((n: any) => !n.read).length;
+        setNotificationCount(total);
+        setUnreadNotifications(unread);
       } else {
         setNotificationCount(0);
+        setUnreadNotifications(0);
+      }
+    });
+
+    // Also listen to admin notifications
+    const adminNotifRef = ref(database, 'notifications');
+    const adminNotifUnsubscribe = onValue(adminNotifRef, (snapshot) => {
+      if (snapshot.exists()) {
+        const adminNotifs = snapshot.val();
+        const unreadAdmin = Object.values(adminNotifs).filter((n: any) => !n.read).length;
+        setUnreadNotifications(prev => prev + unreadAdmin);
       }
     });
 
     return () => {
       unsubscribe();
       notifUnsubscribe();
+      adminNotifUnsubscribe();
     };
   }, [user, navigate]);
 
@@ -187,9 +202,9 @@ const Home = () => {
               className="relative"
             >
               <Bell className="w-5 h-5" />
-              {notificationCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                  {notificationCount}
+              {unreadNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 bg-destructive text-white text-xs rounded-full w-5 h-5 flex items-center justify-center animate-pulse">
+                  {unreadNotifications}
                 </span>
               )}
             </Button>
@@ -257,6 +272,44 @@ const Home = () => {
             />
           </div>
         )}
+
+        <div className="space-y-2 p-4">
+          <div
+            onClick={() => navigate('/self-chat')}
+            className="p-4 hover:bg-accent/30 transition-colors cursor-pointer rounded-lg bg-card border border-border"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent to-primary flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Personal Notes</span>
+                  <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" />
+                </div>
+                <p className="text-sm text-muted-foreground truncate">Your private space for notes</p>
+              </div>
+            </div>
+          </div>
+
+          <div
+            onClick={() => navigate('/ai-chat')}
+            className="p-4 hover:bg-accent/30 transition-colors cursor-pointer rounded-lg bg-card border border-border"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-semibold">Lumina AI</span>
+                  <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" />
+                </div>
+                <p className="text-sm text-muted-foreground truncate">Your AI assistant</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div className="divide-y divide-border">
           {filteredChats.length === 0 ? (

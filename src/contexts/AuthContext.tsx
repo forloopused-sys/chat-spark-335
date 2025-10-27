@@ -48,6 +48,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (!adminSnap.exists() && window.location.pathname !== '/maintenance') {
             window.location.href = '/maintenance';
           }
+        } else {
+          // If maintenance is disabled and user is on maintenance page, redirect to home
+          if (window.location.pathname === '/maintenance') {
+            window.location.href = '/home';
+          }
         }
       }
     });
