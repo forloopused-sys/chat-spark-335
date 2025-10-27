@@ -30,18 +30,22 @@ const Notifications = () => {
   useEffect(() => {
     if (!user) return;
 
+    let userNotifs: Notification[] = [];
+    let adminNotifs: Notification[] = [];
+
     const notificationsRef = ref(database, `userNotifications/${user.uid}`);
     const unsubscribe = onValue(notificationsRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
-        const notifList: Notification[] = Object.entries(data).map(([id, notif]: any) => ({
-          id,
+        userNotifs = Object.entries(data).map(([id, notif]: any) => ({
+          id: `user_${id}`,
           ...notif,
         }));
-        setNotifications(notifList.sort((a, b) => b.timestamp - a.timestamp));
       } else {
-        setNotifications([]);
+        userNotifs = [];
       }
+      // Merge and update
+      setNotifications([...adminNotifs, ...userNotifs].sort((a, b) => b.timestamp - a.timestamp));
     });
 
     // Listen to global admin notifications
@@ -49,13 +53,16 @@ const Notifications = () => {
     const adminUnsubscribe = onValue(adminNotifRef, (snapshot) => {
       if (snapshot.exists()) {
         const data = snapshot.val();
-        const adminNotifs: Notification[] = Object.entries(data).map(([id, notif]: any) => ({
-          id,
+        adminNotifs = Object.entries(data).map(([id, notif]: any) => ({
+          id: `admin_${id}`,
           type: 'admin',
           ...notif,
         }));
-        setNotifications((prev) => [...adminNotifs, ...prev].sort((a, b) => b.timestamp - a.timestamp));
+      } else {
+        adminNotifs = [];
       }
+      // Merge and update
+      setNotifications([...adminNotifs, ...userNotifs].sort((a, b) => b.timestamp - a.timestamp));
     });
 
     return () => {
@@ -146,8 +153,15 @@ const Notifications = () => {
                 ) : notification.type === 'admin' ? (
                   <div>
                     <div className="flex items-center gap-2 mb-2">
-                      <Shield className="w-5 h-5 text-primary" />
-                      <span className="font-semibold">Admin Notification</span>
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Bell className="w-4 h-4 text-white" />
+                      </div>
+                      <span className="font-semibold">Lumina Messenger Notification</span>
+                      {!notification.read && (
+                        <span className="ml-2 px-2 py-0.5 text-xs bg-primary text-white rounded-full">
+                          New
+                        </span>
+                      )}
                     </div>
                     <p className="text-sm mb-3">{notification.message}</p>
                     {notification.imageUrl && (
@@ -161,7 +175,7 @@ const Notifications = () => {
                     {notification.videoUrl && (
                       <div className="aspect-video rounded-lg overflow-hidden mb-3">
                         <iframe
-                          src={notification.videoUrl.replace('m.youtube.com', 'www.youtube.com').replace('watch?v=', 'embed/')}
+                          src={notification.videoUrl.replace('m.youtube.com', 'www.youtube.com/embed').replace('watch?v=', '')}
                           className="w-full h-full"
                           allowFullScreen
                         />
