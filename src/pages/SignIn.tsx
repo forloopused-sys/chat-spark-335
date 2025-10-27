@@ -112,7 +112,9 @@ const SignIn = () => {
           title: 'Welcome Back Admin!',
           description: 'Redirecting to dashboard...',
         });
-        setTimeout(() => navigate('/admin'), 100);
+        setTimeout(() => {
+          navigate('/admin');
+        }, 500);
         return;
       }
 
@@ -175,7 +177,9 @@ const SignIn = () => {
               title: 'Welcome Back Admin!',
               description: 'Redirecting to dashboard...',
             });
-            setTimeout(() => navigate('/admin'), 100);
+            setTimeout(() => {
+              navigate('/admin');
+            }, 500);
             return;
           }
 

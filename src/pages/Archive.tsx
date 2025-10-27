@@ -22,24 +22,27 @@ const Archive = () => {
     if (!user) return;
 
     const loadArchivedChats = async () => {
-      const chatsRef = ref(database, `chats/${user.uid}`);
+      const chatsRef = ref(database, `userChats/${user.uid}`);
       const snapshot = await get(chatsRef);
       
       if (snapshot.exists()) {
         const data = snapshot.val();
         const archived: ArchivedChat[] = [];
 
-        for (const userId in data) {
-          if (data[userId].archived) {
-            const userRef = ref(database, `users/${userId}`);
+        for (const chatId in data) {
+          const chat = data[chatId];
+          if (chat.archived) {
+            // Extract other user ID from chatId
+            const otherUserId = chatId.replace(user.uid, '').replace(/_/g, '');
+            const userRef = ref(database, `users/${otherUserId}`);
             const userSnapshot = await get(userRef);
             
             if (userSnapshot.exists()) {
               archived.push({
-                userId,
+                userId: otherUserId,
                 username: userSnapshot.val().username,
-                lastMessage: data[userId].lastMessage || '',
-                timestamp: data[userId].timestamp || 0,
+                lastMessage: chat.lastMessage || '',
+                timestamp: chat.timestamp || 0,
               });
             }
           }
@@ -52,7 +55,7 @@ const Archive = () => {
     loadArchivedChats();
 
     // Set up real-time listener
-    const chatsRef = ref(database, `chats/${user.uid}`);
+    const chatsRef = ref(database, `userChats/${user.uid}`);
     const unsubscribe = onValue(chatsRef, () => {
       loadArchivedChats();
     });
@@ -62,7 +65,8 @@ const Archive = () => {
 
   const unarchiveChat = async (userId: string) => {
     if (!user) return;
-    const chatRef = ref(database, `chats/${user.uid}/${userId}/archived`);
+    const chatId = [user.uid, userId].sort().join('_');
+    const chatRef = ref(database, `userChats/${user.uid}/${chatId}/archived`);
     await set(chatRef, false);
   };
 

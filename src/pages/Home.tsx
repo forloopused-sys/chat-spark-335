@@ -36,12 +36,19 @@ const Home = () => {
   const [notificationCount, setNotificationCount] = useState(0);
   const [hasArchivedChats, setHasArchivedChats] = useState(false);
   const [hasLockedChats, setHasLockedChats] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     if (!user) {
       navigate('/signin');
       return;
     }
+
+    // Check if user is admin
+    const adminRef = ref(database, `admins/${user.uid}`);
+    get(adminRef).then((snapshot) => {
+      setIsAdmin(snapshot.exists());
+    });
 
     const chatsRef = ref(database, `userChats/${user.uid}`);
     const unsubscribe = onValue(chatsRef, async (snapshot) => {
@@ -131,7 +138,7 @@ const Home = () => {
     if (!user) return;
     
     // Check if PIN is set
-    const pinRef = ref(database, `users/${user.uid}/pin`);
+    const pinRef = ref(database, `users/${user.uid}/lockPin`);
     const pinSnapshot = await get(pinRef);
     
     if (!pinSnapshot.exists()) {
@@ -159,9 +166,20 @@ const Home = () => {
       <div className="max-w-2xl mx-auto">
         <div className="bg-card border-b border-border p-4 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold">Lumina Messenger</h1>
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold">Lumina Messenger</h1>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-1 sm:gap-2">
+            {isAdmin && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/admin')}
+                className="relative"
+                title="Admin Dashboard"
+              >
+                <Settings className="w-5 h-5 text-primary" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"

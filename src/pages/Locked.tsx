@@ -42,21 +42,23 @@ const Locked = () => {
     loadSecurityQuestion();
 
     // Load locked chats
-    const chatsRef = ref(database, `chats/${user.uid}`);
+    const chatsRef = ref(database, `userChats/${user.uid}`);
     const unsubscribe = onValue(chatsRef, async (snapshot) => {
       if (snapshot.exists()) {
         const chatData = snapshot.val();
         const lockedList: LockedChat[] = [];
 
-        for (const userId in chatData) {
-          const chat = chatData[userId];
+        for (const chatId in chatData) {
+          const chat = chatData[chatId];
           if (chat.locked) {
-            const userRef = ref(database, `users/${userId}`);
+            // Extract other user ID from chatId
+            const otherUserId = chatId.replace(user.uid, '').replace(/_/g, '');
+            const userRef = ref(database, `users/${otherUserId}`);
             const userSnapshot = await get(userRef);
             
             if (userSnapshot.exists()) {
               lockedList.push({
-                userId,
+                userId: otherUserId,
                 username: userSnapshot.val().username,
                 lastMessage: chat.lastMessage || '',
                 timestamp: chat.timestamp || 0,
@@ -124,7 +126,8 @@ const Locked = () => {
 
   const unlockChat = async (userId: string) => {
     if (!user) return;
-    const chatRef = ref(database, `chats/${user.uid}/${userId}/locked`);
+    const chatId = [user.uid, userId].sort().join('_');
+    const chatRef = ref(database, `userChats/${user.uid}/${chatId}/locked`);
     await set(chatRef, false);
     toast({
       title: 'Chat Unlocked',
