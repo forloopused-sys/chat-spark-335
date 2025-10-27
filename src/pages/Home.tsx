@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Settings, Users, Bell, Archive, Lock, CheckCircle, MessageSquare } from 'lucide-react';
+import { Search, Settings, Users, Bell, Archive, Lock, BadgeCheck, MessageSquare } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
@@ -272,7 +272,7 @@ const Home = () => {
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-semibold">@{chat.username}</span>
                     {chat.verified && (
-                      <CheckCircle className="w-4 h-4 text-primary fill-primary" />
+                      <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" />
                     )}
                     <span className="text-xs text-muted-foreground ml-auto">
                       {formatTime(chat.timestamp)}

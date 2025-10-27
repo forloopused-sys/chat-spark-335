@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Shield } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { database } from '@/lib/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 import { auth } from '@/lib/firebase';
 import { 
@@ -15,6 +17,7 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider
 } from 'firebase/auth';
+import { ref, onValue, set, get } from 'firebase/database';
 import { useToast } from '@/hooks/use-toast';
 import {
   AlertDialog,
@@ -36,6 +39,27 @@ const Account = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // 2FA states
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [setupStep, setSetupStep] = useState(0);
+  const [twoFAPin, setTwoFAPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
+  const [securityQuestion, setSecurityQuestion] = useState('');
+  const [securityAnswer, setSecurityAnswer] = useState('');
+
+  useEffect(() => {
+    if (!user) return;
+    
+    const twoFARef = ref(database, `users/${user.uid}/twoFA`);
+    const unsubscribe = onValue(twoFARef, (snapshot) => {
+      if (snapshot.exists()) {
+        setTwoFAEnabled(snapshot.val().enabled || false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const handleChangeEmail = async () => {
     if (!user || !newEmail || !currentPassword) {
@@ -132,6 +156,91 @@ const Account = () => {
     }
   };
 
+  const handleToggle2FA = async () => {
+    if (!user) return;
+
+    if (twoFAEnabled) {
+      // Disable 2FA
+      const twoFARef = ref(database, `users/${user.uid}/twoFA`);
+      await set(twoFARef, { enabled: false });
+      setTwoFAEnabled(false);
+      setSetupStep(0);
+      toast({
+        title: '2FA Disabled',
+        description: 'Two-factor authentication has been disabled',
+      });
+    } else {
+      // Start setup process
+      setSetupStep(1);
+    }
+  };
+
+  const handleSetup2FA = async () => {
+    if (!user) return;
+
+    if (setupStep === 1) {
+      // Validate PIN
+      if (twoFAPin.length !== 6 || !/^\d+$/.test(twoFAPin)) {
+        toast({
+          title: 'Invalid PIN',
+          description: 'PIN must be 6 digits',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setSetupStep(2);
+    } else if (setupStep === 2) {
+      // Confirm PIN
+      if (twoFAPin !== confirmPin) {
+        toast({
+          title: 'PIN Mismatch',
+          description: 'PINs do not match',
+          variant: 'destructive',
+        });
+        return;
+      }
+      setSetupStep(3);
+    } else if (setupStep === 3) {
+      // Save security question and answer
+      if (!securityQuestion || !securityAnswer) {
+        toast({
+          title: 'Missing Information',
+          description: 'Please provide security question and answer',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      const twoFARef = ref(database, `users/${user.uid}/twoFA`);
+      await set(twoFARef, {
+        enabled: true,
+        pin: twoFAPin,
+        securityQuestion,
+        securityAnswer: securityAnswer.toLowerCase().trim(),
+      });
+
+      setTwoFAEnabled(true);
+      setSetupStep(0);
+      setTwoFAPin('');
+      setConfirmPin('');
+      setSecurityQuestion('');
+      setSecurityAnswer('');
+
+      toast({
+        title: '2FA Enabled',
+        description: 'Two-factor authentication has been enabled',
+      });
+    }
+  };
+
+  const handleCancel2FASetup = () => {
+    setSetupStep(0);
+    setTwoFAPin('');
+    setConfirmPin('');
+    setSecurityQuestion('');
+    setSecurityAnswer('');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30">
       <div className="max-w-2xl mx-auto">
@@ -207,6 +316,97 @@ const Account = () => {
             >
               Update Password
             </Button>
+          </div>
+
+          {/* 2FA Section */}
+          <div className="space-y-4 pt-4 border-t border-border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-primary" />
+                <div>
+                  <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
+                  <p className="text-sm text-muted-foreground">Add extra security to your account</p>
+                </div>
+              </div>
+              <Switch
+                checked={twoFAEnabled}
+                onCheckedChange={handleToggle2FA}
+                disabled={setupStep > 0}
+              />
+            </div>
+
+            {setupStep === 1 && (
+              <div className="space-y-4 p-4 bg-accent/10 rounded-lg">
+                <div>
+                  <Label htmlFor="twoFAPin">Enter 6-Digit PIN</Label>
+                  <Input
+                    id="twoFAPin"
+                    type="password"
+                    maxLength={6}
+                    value={twoFAPin}
+                    onChange={(e) => setTwoFAPin(e.target.value.replace(/\D/g, ''))}
+                    className="mt-1"
+                    placeholder="Enter 6 digits"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSetup2FA} className="flex-1">Next</Button>
+                  <Button onClick={handleCancel2FASetup} variant="outline">Cancel</Button>
+                </div>
+              </div>
+            )}
+
+            {setupStep === 2 && (
+              <div className="space-y-4 p-4 bg-accent/10 rounded-lg">
+                <div>
+                  <Label htmlFor="confirmPin">Confirm 6-Digit PIN</Label>
+                  <Input
+                    id="confirmPin"
+                    type="password"
+                    maxLength={6}
+                    value={confirmPin}
+                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
+                    className="mt-1"
+                    placeholder="Re-enter 6 digits"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSetup2FA} className="flex-1">Next</Button>
+                  <Button onClick={handleCancel2FASetup} variant="outline">Cancel</Button>
+                </div>
+              </div>
+            )}
+
+            {setupStep === 3 && (
+              <div className="space-y-4 p-4 bg-accent/10 rounded-lg">
+                <div>
+                  <Label htmlFor="securityQuestion">Security Question</Label>
+                  <Input
+                    id="securityQuestion"
+                    type="text"
+                    value={securityQuestion}
+                    onChange={(e) => setSecurityQuestion(e.target.value)}
+                    className="mt-1"
+                    placeholder="e.g., What is your mother's maiden name?"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="securityAnswer">Security Answer</Label>
+                  <Input
+                    id="securityAnswer"
+                    type="text"
+                    value={securityAnswer}
+                    onChange={(e) => setSecurityAnswer(e.target.value)}
+                    className="mt-1"
+                    placeholder="Your answer"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSetup2FA} className="flex-1">Complete Setup</Button>
+                  <Button onClick={handleCancel2FASetup} variant="outline">Cancel</Button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 pt-4 border-t border-border">

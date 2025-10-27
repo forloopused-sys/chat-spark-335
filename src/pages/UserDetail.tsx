@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CheckCircle, X } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, X } from 'lucide-react';
 import { database } from '@/lib/firebase';
 import { ref, get } from 'firebase/database';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -93,7 +93,7 @@ const UserDetail = () => {
               <div className="flex items-center gap-2">
                 <p className="text-lg font-semibold">@{userDetail.username}</p>
                 {userDetail.verified && (
-                  <CheckCircle className="w-5 h-5 text-primary fill-primary" />
+                  <BadgeCheck className="w-5 h-5 text-blue-500 fill-blue-500" />
                 )}
               </div>
             </div>

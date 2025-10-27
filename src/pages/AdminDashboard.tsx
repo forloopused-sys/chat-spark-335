@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Users, Shield, Bell, CheckCircle, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Bell, BadgeCheck, Pencil, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { database } from '@/lib/firebase';
 import { ref, onValue, set, push, remove } from 'firebase/database';
@@ -303,7 +303,7 @@ const AdminDashboard = () => {
                         <div className="font-semibold flex items-center gap-2">
                           @{userData.username}
                           {userData.verified && (
-                            <CheckCircle className="w-4 h-4 text-primary fill-primary" />
+                            <BadgeCheck className="w-4 h-4 text-blue-500 fill-blue-500" />
                           )}
                         </div>
                         <div className="text-sm text-muted-foreground">{userData.email}</div>

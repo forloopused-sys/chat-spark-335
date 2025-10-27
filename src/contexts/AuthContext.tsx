@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, onAuthStateChanged } from 'firebase/auth';
 import { auth, database } from '@/lib/firebase';
-import { ref, onDisconnect, serverTimestamp, set, onValue } from 'firebase/database';
+import { ref, onDisconnect, serverTimestamp, set, onValue, get } from 'firebase/database';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -15,9 +16,18 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    // Check maintenance mode
+    const maintenanceRef = ref(database, 'settings/maintenance');
+    onValue(maintenanceRef, (snapshot) => {
+      setMaintenanceMode(snapshot.val() || false);
+    });
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
 
@@ -29,11 +39,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         onDisconnect(userStatusRef).set('offline');
         onDisconnect(userLastSeenRef).set(serverTimestamp());
+
+        // Check if maintenance mode and redirect non-admin users
+        if (maintenanceMode) {
+          const adminRef = ref(database, `admins/${user.uid}`);
+          const adminSnap = await get(adminRef);
+          
+          if (!adminSnap.exists() && window.location.pathname !== '/maintenance') {
+            window.location.href = '/maintenance';
+          }
+        }
       }
     });
 
     return unsubscribe;
-  }, []);
+  }, [maintenanceMode]);
 
   return (
     <AuthContext.Provider value={{ user, loading }}>
